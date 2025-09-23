@@ -39,7 +39,7 @@ def test_rebalance_decrease_total_value(wrapper: WrapperMinting):
     liability_wsteth = wrapper.minted_liability_wsteth("user1")
     liability_steth = wrapper.minted_liability_steth("user1")
 
-    wrapper.rebalance_minted_liability_wsteth("user1", liability_wsteth)
+    wrapper.vault_rebalance_minted_liability_wsteth("user1", liability_wsteth)
     assert wrapper.get_total_value() == approx(total_value_before - liability_steth, TOLERANCE)
 
 
@@ -47,12 +47,12 @@ def test_rebalance_decrease_total_liability(wrapper: WrapperMinting):
     total_liability_before = wrapper.get_total_minted_liability_wsteth()
     liability_wsteth = wrapper.minted_liability_wsteth("user1")
 
-    wrapper.rebalance_minted_liability_wsteth("user1", liability_wsteth)
+    wrapper.vault_rebalance_minted_liability_wsteth("user1", liability_wsteth)
     assert wrapper.get_total_minted_liability_wsteth() == total_liability_before - liability_wsteth
 
 
 def test_rebalance_decrease_user_assets(wrapper: WrapperMinting):
     steth_to_rebalance = 10_000
 
-    wrapper.rebalance_minted_liability_steth("user1", steth_to_rebalance)
+    wrapper.vault_rebalance_minted_liability_steth("user1", steth_to_rebalance)
     assert wrapper.assets_of("user1") == approx(user1_initial_eth - steth_to_rebalance, TOLERANCE)

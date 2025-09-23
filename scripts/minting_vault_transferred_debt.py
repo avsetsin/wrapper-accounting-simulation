@@ -19,10 +19,6 @@ def main():
     wrapper.vault.increase_liability_steth(20000)
     print_users(wrapper, "Total liability increased due to transferred debt")
 
-    # TODO: should we block operations until the rebalancing is done
-    # wrapper.stake_eth("user 5", 20000)
-    # print_users(wrapper, "User 5 stakes 20,000")
-
     wrapper.rebalance_total_shared_liability_wsteth(wrapper.get_total_shared_liability_wsteth() // 2)
     print_users(wrapper, "Half of the transferred debt rebalanced")
 

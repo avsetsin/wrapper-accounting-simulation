@@ -42,7 +42,7 @@ def test_user_rebalance(wrapper: WrapperMinting):
     assert wrapper.liability_steth_of("user2") == user2_minted_steth
 
     # rebalance partial user 1 debt
-    wrapper.rebalance_minted_liability_steth("user1", user1_minted_steth // 2)
+    wrapper.vault_rebalance_minted_liability_steth("user1", user1_minted_steth // 2)
     assert wrapper.minted_liability_steth("user1") == user1_minted_steth // 2
 
     # rebalance of user 1 do not affect user 2
@@ -50,7 +50,7 @@ def test_user_rebalance(wrapper: WrapperMinting):
     assert wrapper.assets_of("user2") == user2_initial_eth
 
     # rebalance remaining user 1 debt
-    wrapper.rebalance_minted_liability_wsteth("user1", wrapper.liability_wsteth_of("user1"))
+    wrapper.vault_rebalance_minted_liability_wsteth("user1", wrapper.liability_wsteth_of("user1"))
     assert wrapper.minted_liability_steth("user1") == 0
     assert wrapper.liability_steth_of("user1") == 0
 
@@ -59,7 +59,7 @@ def test_user_rebalance(wrapper: WrapperMinting):
     assert wrapper.get_total_minted_liability_steth() == user2_minted_steth
 
     # rebalance user 2 debt fully
-    wrapper.rebalance_minted_liability_wsteth("user2", wrapper.liability_wsteth_of("user2"))
+    wrapper.vault_rebalance_minted_liability_wsteth("user2", wrapper.liability_wsteth_of("user2"))
     assert wrapper.minted_liability_steth("user2") == 0
     assert wrapper.liability_steth_of("user2") == 0
 

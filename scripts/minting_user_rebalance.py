@@ -15,13 +15,13 @@ def main():
     wrapper.mint_steth("user 2", 25_000)
     print_users(wrapper, "Mint stETH for users")
 
-    wrapper.rebalance_minted_liability_steth("user 1", 25_000)
+    wrapper.vault_rebalance_minted_liability_steth("user 1", 25_000)
     print_users(wrapper, "Rebalance half of user 1 liability")
 
-    wrapper.rebalance_minted_liability_wsteth("user 1", wrapper.minted_liability_wsteth("user 1"))
+    wrapper.vault_rebalance_minted_liability_wsteth("user 1", wrapper.minted_liability_wsteth("user 1"))
     print_users(wrapper, "Rebalance rest of user 1 liability")
 
-    wrapper.rebalance_minted_liability_wsteth("user 2", wrapper.minted_liability_wsteth("user 2"))
+    wrapper.vault_rebalance_minted_liability_wsteth("user 2", wrapper.minted_liability_wsteth("user 2"))
     print_users(wrapper, "Rebalance all user 2 liability")
 
 

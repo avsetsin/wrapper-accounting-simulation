@@ -113,7 +113,7 @@ def assert_user_operations_blocked(wrapper: WrapperMinting):
         lambda: wrapper.stake_eth("user1", 10),
         lambda: wrapper.withdraw_eth("user1", 10),
         lambda: wrapper.mint_steth("user1", 10),
-        lambda: wrapper.burn_steth("user1", 10),  # TODO: should we allow burn when shared liability is positive?
+        lambda: wrapper.burn_steth("user1", 10),
     ]:
         with raises(ValueError, match="Operation not allowed with positive shared liability"):
             operation()

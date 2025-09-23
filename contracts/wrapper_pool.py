@@ -61,13 +61,20 @@ class WrapperPool:
     def withdraw_eth(self, user: str, amount: int):
         self._check_positive_amount(amount)
         self._check_positive_shared_liability()
+        self._withdraw_eth(user, amount)
 
+    def _withdraw_eth(self, user: str, amount: int):
         shares = self.effective_assets_to_shares(amount)
+        if shares > self.shares_of(user):
+            raise ValueError("Not enough shares to withdraw")
         self._burn_shares(user, shares)
         self.vault.decrease_total_value(amount)
 
     def assets_of(self, user: str):
         return self.shares_to_assets(self.balance_of(user))
+
+    def effective_assets_of(self, user: str):
+        return max(0, self.assets_of(user) - self.shared_liability_steth(user))
 
     # user shares methods
 

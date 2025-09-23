@@ -18,10 +18,10 @@ def main():
     wrapper.vault.rebalance(wrapper.vault.get_total_liability_shares())
     print_users(wrapper, "Vault rebalance total liability")
 
-    wrapper.rebalance_minted_liability_to_assets_wsteth("user 1", wrapper.minted_liability_wsteth("user 1"))
+    wrapper.shared_rebalance_minted_liability_wsteth("user 1", wrapper.minted_liability_wsteth("user 1"))
     print_users(wrapper, "Internal rebalance")
 
-    wrapper.withdraw_eth("user 1", wrapper.withdrawable_collateral("user 1"))
+    wrapper.withdraw_eth("user 1", wrapper.withdrawable_effective_assets_of("user 1"))
     print_users(wrapper, "User 1 withdraws all")
 
 

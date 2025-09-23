@@ -50,12 +50,10 @@ class WrapperMinting(WrapperPool):
         self._check_positive_amount(amount)
         self._check_positive_shared_liability()
 
-        if amount > self.withdrawable_collateral(user):
-            raise ValueError("Not enough withdrawable collateral")
+        if amount > self.withdrawable_effective_assets_of(user):
+            raise ValueError("Not enough withdrawable assets to withdraw")
 
-        shares = self.effective_assets_to_shares(amount)
-        self._burn_shares(user, shares)
-        self.vault.decrease_total_value(amount)
+        self._withdraw_eth(user, amount)
 
     # minted liability
 
@@ -70,8 +68,6 @@ class WrapperMinting(WrapperPool):
 
         self.vault.increase_liability(wsteth)
         self._increase_internal_liability_wsteth(user, wsteth)
-
-        # TODO: can we use negative shared liability
 
     def _increase_internal_liability_wsteth(self, user: str, wsteth: int):
         self._minted_wsteth[user] = self.minted_liability_wsteth(user) + wsteth
@@ -89,8 +85,6 @@ class WrapperMinting(WrapperPool):
         self.burn_wsteth(user, wsteth)
 
     def burn_wsteth(self, user: str, wsteth: int):
-        # TODO: should we allow to burn liability when shared liability is positive?
-
         self._check_positive_amount(wsteth)
         self._check_positive_shared_liability()
 
@@ -100,64 +94,19 @@ class WrapperMinting(WrapperPool):
         self._decrease_internal_liability_wsteth(user, wsteth)
         self.vault.decrease_liability(wsteth)
 
-    # reserve
+    # withdrawable
 
-    def collateral(self, user: str):
-        # TODO: need better naming
-        return max(0, self.assets_of(user) - self.shared_liability_steth(user))
-
-    def collateral_to_reserve(self, user: str):
-        if self.collateral(user) <= 0:
-            return 0
-        return floor(self.collateral(user) * self.reserve_ratio / (1 - self.reserve_ratio))
-
-    def withdrawable_collateral(self, user: str):
+    def withdrawable_effective_assets_of(self, user: str):
         minted_liability = self.minted_liability_steth(user)
         shared_liability = self.shared_liability_steth(user)
         total_liability = minted_liability + max(shared_liability, 0)
 
         required_reserve = floor(total_liability / (1 - self.reserve_ratio))
-        return self.collateral(user) - required_reserve
+        return self.effective_assets_of(user) - required_reserve
 
-    # user rebalance methods
+    # user rebalance methods against vault
 
-    def get_shared_liability_to_rebalance_wsteth(self, user: str):
-        total_shared_liability = self.get_total_shared_liability_wsteth()
-
-        user_minted_wsteth = self.minted_liability_wsteth(user)
-        total_minted_wsteth = self.get_total_minted_liability_wsteth()
-
-        if total_minted_wsteth == 0:
-            return 0
-
-        return ceil(-total_shared_liability * user_minted_wsteth / total_minted_wsteth)
-
-    def rebalance_shared_liability_wsteth(self, user: str, wsteth: int):
-        if wsteth <= 0:
-            raise ValueError("Rebalance amount must be positive")
-
-        if wsteth > self.get_shared_liability_to_rebalance_wsteth(user):
-            raise ValueError("Cannot rebalance more than the shared liability")
-
-        available_assets = self.assets_of(user)
-        assets_to_rebalance = self.vault.lido.get_pooled_eth_by_shares(wsteth)
-
-        if available_assets < assets_to_rebalance:
-            raise ValueError("Not enough assets to rebalance")
-
-        shares = self.effective_assets_to_shares(assets_to_rebalance, ceil)
-
-        self._decrease_internal_liability_wsteth(user, wsteth)
-        self._burn_shares(user, shares)
-
-        # TODO: write off rebalanced debt ?
-        # TODO: assets - debt doesn't match
-
-    def rebalance_shared_liability_steth(self, user: str, steth: int):
-        wsteth = self.vault.lido.get_shares_by_pooled_eth_rounded_up(steth)
-        self.rebalance_shared_liability_wsteth(user, wsteth)
-
-    def rebalance_minted_liability_wsteth(self, user: str, wsteth: int):
+    def vault_rebalance_minted_liability_wsteth(self, user: str, wsteth: int):
         self._check_positive_amount(wsteth)
         liability_wsteth = self.liability_wsteth_of(user)
         steth_to_rebalance = self.vault.lido.get_pooled_eth_by_shares_rounded_up(wsteth)
@@ -165,16 +114,18 @@ class WrapperMinting(WrapperPool):
         if wsteth > liability_wsteth:
             raise ValueError("Cannot rebalance more than the total liability")
 
-        shares = self.assets_to_shares(steth_to_rebalance)
+        shares = self.effective_assets_to_shares(steth_to_rebalance)
         self._burn_shares(user, shares)
         self._decrease_internal_liability_wsteth(user, wsteth)
         self.vault.rebalance(wsteth)
 
-    def rebalance_minted_liability_steth(self, user: str, steth: int):
+    def vault_rebalance_minted_liability_steth(self, user: str, steth: int):
         wsteth = self.vault.lido.get_shares_by_pooled_eth_rounded_up(steth)
-        self.rebalance_minted_liability_wsteth(user, wsteth)
+        self.vault_rebalance_minted_liability_wsteth(user, wsteth)
 
-    def rebalance_minted_liability_to_assets_wsteth(self, user: str, wsteth: int):
+    # user rebalance methods against shared liability
+
+    def shared_rebalance_minted_liability_wsteth(self, user: str, wsteth: int):
         self._check_positive_amount(wsteth)
         minted_wsteth = self.minted_liability_wsteth(user)
         shared_liability_wsteth = -self.get_total_shared_liability_wsteth()
@@ -190,9 +141,9 @@ class WrapperMinting(WrapperPool):
         self._burn_shares(user, shares)
         self._decrease_internal_liability_wsteth(user, wsteth)
 
-    def rebalance_minted_liability_to_assets_steth(self, user: str, steth: int):
+    def shared_rebalance_minted_liability_steth(self, user: str, steth: int):
         wsteth = self.vault.lido.get_shares_by_pooled_eth_rounded_up(steth)
-        self.rebalance_minted_liability_to_assets_wsteth(user, wsteth)
+        self.shared_rebalance_minted_liability_wsteth(user, wsteth)
 
     # checks
 

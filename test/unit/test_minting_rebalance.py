@@ -47,11 +47,11 @@ def test_initial_state(wrapper: WrapperMinting):
     assert wrapper.vault.get_total_liability_shares() == 0
 
 
-def test_rebalance_to_assets_decrease_collateral(wrapper: WrapperMinting):
+def test_rebalance_to_assets_decrease_effective_assets(wrapper: WrapperMinting):
     assets_to_rebalance = 10_000
 
-    assets_before = wrapper.collateral("user1")
-    wrapper.rebalance_minted_liability_to_assets_steth("user1", assets_to_rebalance)
-    assets_after = wrapper.collateral("user1")
+    assets_before = wrapper.effective_assets_of("user1")
+    wrapper.shared_rebalance_minted_liability_steth("user1", assets_to_rebalance)
+    assets_after = wrapper.effective_assets_of("user1")
 
     assert assets_before - assets_after == assets_to_rebalance

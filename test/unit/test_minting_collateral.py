@@ -32,26 +32,26 @@ def test_initial_state(wrapper: WrapperMinting):
     assert wrapper.minted_liability_steth("user2") == user2_minted_steth
 
 
-def test_withdraw_less_than_collateral(wrapper: WrapperMinting):
+def test_withdraw_less_than_withdrawable_assets(wrapper: WrapperMinting):
     wrapper.withdraw_eth("user1", 100)
 
 
-def test_withdraw_withdrawable_collateral(wrapper: WrapperMinting):
+def test_withdraw_withdrawable_assets(wrapper: WrapperMinting):
     assert wrapper.assets_of("user1") == user1_initial_eth
-    assert wrapper.withdrawable_collateral("user1") > 0
+    assert wrapper.withdrawable_effective_assets_of("user1") > 0
 
-    wrapper.withdraw_eth("user1", wrapper.withdrawable_collateral("user1"))
+    wrapper.withdraw_eth("user1", wrapper.withdrawable_effective_assets_of("user1"))
 
     assert wrapper.assets_of("user1") == user1_minted_steth // 0.75  # 25% reserve
-    assert wrapper.withdrawable_collateral("user1") == 0
+    assert wrapper.withdrawable_effective_assets_of("user1") == 0
 
 
-def test_revert_on_withdraw_more_than_collateral(wrapper: WrapperMinting):
-    withdrawable_collateral = wrapper.withdrawable_collateral("user1")
-    assert withdrawable_collateral > 0
+def test_revert_on_withdraw_more_than_withdrawable_assets(wrapper: WrapperMinting):
+    withdrawable_assets = wrapper.withdrawable_effective_assets_of("user1")
+    assert withdrawable_assets > 0
 
-    with raises(ValueError, match="Not enough withdrawable collateral"):
-        wrapper.withdraw_eth("user1", withdrawable_collateral + 1)
+    with raises(ValueError, match="Not enough withdrawable assets to withdraw"):
+        wrapper.withdraw_eth("user1", withdrawable_assets + 1)
 
 
 def test_can_withdraw_all_after_debt_settled(wrapper: WrapperMinting):
